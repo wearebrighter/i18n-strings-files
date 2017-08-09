@@ -112,12 +112,12 @@
     reAssign = /[^\\]" = "/;
     reLineEnd = /";$/;
     reCommentEnd = /\*\/$/;
-    result = {};
+    result = [];
     lines = input.split("\n");
     currentComment = '';
     nextLineIsComment = false;
     lines.forEach(function(line) {
-      var msgid, msgstr, val;
+      var msgid, msgstr;
       line = line.trim();
       line = line.replace(/([^\\])("\s*=\s*")/g, "$1\" = \"");
       line = line.replace(/"\s+;/g, '";');
@@ -150,24 +150,23 @@
       msgstr = msgstr.replace(/\\"/g, "\"");
       msgid = msgid.replace(/\\n/g, "\n");
       msgstr = msgstr.replace(/\\n/g, "\n");
+
+      let obj = {'key': msgid, 'text': msgstr};
       if (!wantsComments) {
-        return result[msgid] = msgstr;
+        return result.push(obj);
       } else {
-        val = {
-          'text': msgstr
-        };
         if (currentComment) {
-          val['comment'] = currentComment;
+          obj['comment'] = currentComment;
           currentComment = '';
         }
-        return result[msgid] = val;
+        return result.push(obj);
       }
     });
     return result;
   };
 
   i18nStringsFiles.prototype.compile = function(data, wantsComments) {
-    var comment, msgid, msgstr, output, val;
+    var comment, msgid, msgstr, output;
     if (!wantsComments) {
       wantsComments = false;
     }
@@ -175,19 +174,16 @@
       return "";
     }
     output = "";
-    for (msgid in data) {
-      val = data[msgid];
+    for (obj in data) {
+      msgid = obj['key'];
       msgstr = '';
       comment = null;
-      if (typeof val === 'string') {
-        msgstr = val;
-      } else {
-        if (val.hasOwnProperty('text')) {
-          msgstr = val['text'];
-        }
-        if (wantsComments && val.hasOwnProperty('comment')) {
-          comment = val['comment'];
-        }
+
+      if (obj.hasOwnProperty('text')) {
+        msgstr = obj['text'];
+      }
+      if (wantsComments && obj.hasOwnProperty('comment')) {
+        comment = obj['comment'];
       }
       msgid = msgid.replace(/"/g, "\\\"");
       msgstr = msgstr.replace(/"/g, "\\\"");
